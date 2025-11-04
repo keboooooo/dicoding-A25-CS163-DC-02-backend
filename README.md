@@ -15,4 +15,4 @@ Anggota Kelompok:
 
 - [Project Plan](https://docs.google.com/document/d/1BGbQYG6ioEZIRV2rm5U5EU865k6I0QA7XLjxZRyoBRI/edit?tab=t.0)
 - [Master Worksheet Capstone](https://docs.google.com/spreadsheets/d/1bPjkTd41Lzs4e5u_LjLxHY1nCq4vNVo8FG4zfOZMchw/edit?gid=0#gid=0)
-- [Repo Frontend] (https://github.com/keboooooo/dicoding-A25-CS163-DC-02)
+- [Repo Frontend](https://github.com/keboooooo/dicoding-A25-CS163-DC-02)
