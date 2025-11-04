@@ -1,0 +1,26 @@
+{
+  "name": "dicoding-a25-cs163-dc-02-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keboooooo/dicoding-A25-CS163-DC-02-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/keboooooo/dicoding-A25-CS163-DC-02-backend/issues"
+  },
+  "homepage": "https://github.com/keboooooo/dicoding-A25-CS163-DC-02-backend#readme",
+  "dependencies": {
+    "@hapi/hapi": "^21.4.3",
+    "axios": "^1.13.1",
+    "dotenv": "^17.2.3",
+    "nodemon": "^3.1.10"
+  }
+}
