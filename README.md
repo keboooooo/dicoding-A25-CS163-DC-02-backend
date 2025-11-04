@@ -1,4 +1,4 @@
-# Capstone Project Dicoding
+# Capstone Project Dicoding BACKEND
 
 - ID Team: A25-CS163
 - Use Case: DC-02
