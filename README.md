@@ -135,3 +135,23 @@ Lihat `.env.example` untuk daftar lengkap. Nilai penting:
 
 - API Cerebras menggunakan interface mirip OpenAI Chat Completions. Jika parameter `response_format` tidak didukung, prompt telah diarahkan agar tetap mengembalikan JSON valid.
 - Jika struktur data sumber berubah, sesuaikan mapping di `server.js` bagian `fetchTutorial` dan `fetchUserPreferences`.
+
+### Strukur (masih wip)
+- src/ — application source
+  - src/routes/ — route definitions per resource (e.g., generate, material, health)
+  - src/controllers/ — request handlers that orchestrate services
+  - src/services/ — domain logic (tutorial fetching, preferences, LLM, material processing)
+  - src/clients/ — external clients (e.g., Axios instances for Dicoding mock, Cerebras)
+  - src/utils/ — helpers (HTML/text utils, parsing, error helpers)
+  - src/plugins/ — Hapi plugins and server extensions (e.g., onPreResponse, CORS)
+  - src/config/ — configuration loaders, constants from env
+  - src/validators/ — Joi or similar schemas for params/query/body
+  - src/constants/ — app constants and enums
+- tests/
+  - tests/unit/
+  - tests/integration/
+- scripts/ — local tooling or dev scripts
+- docs/ — project docs, API notes, diagrams
+- logs/ — runtime logs (git-kept only)
+- mocks/ — sample payloads for local testing
+- .env.example — template for environment variables
