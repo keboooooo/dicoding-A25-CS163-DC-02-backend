@@ -155,3 +155,19 @@ Lihat `.env.example` untuk daftar lengkap. Nilai penting:
 - logs/ — runtime logs (git-kept only)
 - mocks/ — sample payloads for local testing
 - .env.example — template for environment variables
+
+## Log Perubahan (08/11)
+
+Ringkasan perubahan yang dilakukan pada tanggal 08/11 (dd/mm):
+
+1. Modularisasi kode `server.js` tanpa mengubah perilaku:
+  - Memindahkan konfigurasi environment ke `src/config/env.js`.
+  - Memindahkan handler error global ke `src/plugins/onPreResponse.js`.
+  - Memecah utilitas materi (fungsi `stripHtmlToText`, `extractMaterialHtml`, `fetchPageHtmlFallback`) ke `src/utils/material.js`.
+  - Memindahkan fungsi akses API sumber (`fetchTutorial`, `fetchUserPreferences`) ke `src/services/tutorialService.js`.
+  - Memindahkan fungsi pemanggilan LLM (`callCerebras`) ke `src/services/cerebrasService.js`.
+2. Menambahkan struktur direktori kosong dengan `.gitkeep` agar siap diisi (routes, controllers, services, clients, utils, plugins, config, validators, constants, tests/unit, tests/integration, scripts, docs, logs, mocks).
+3. Menambahkan file `.env.example` sebagai template variabel environment.
+4. Menyesuaikan `server.js` agar menggunakan import dari modul-modul baru tersebut.
+
+Tidak ada perubahan logika bisnis atau format response API—hanya pemisahan file agar lebih mudah dikembangkan selanjutnya.
