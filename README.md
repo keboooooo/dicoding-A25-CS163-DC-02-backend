@@ -171,3 +171,76 @@ Ringkasan perubahan yang dilakukan pada tanggal 08/11 (dd/mm):
 4. Menyesuaikan `server.js` agar menggunakan import dari modul-modul baru tersebut.
 
 Tidak ada perubahan logika bisnis atau format response API—hanya pemisahan file agar lebih mudah dikembangkan selanjutnya.
+
+## Log Perubahan (11/11)
+
+Penerapan Phase 0 (stabilisasi awal) dengan fokus pada keandalan dan observabilitas dasar:
+
+1. Validasi output LLM:
+  - Ditambahkan `Ajv` dan schema di `src/validators/quiz.js`.
+  - Integrasi pada `callCerebras` untuk melempar error 502 jika struktur JSON tidak sesuai.
+2. Caching hasil generate:
+  - In-memory TTL cache (`src/utils/cache.js`).
+  - Penggunaan pada route `/api/generate/{tutorialId}` dan `/api/test` (mengembalikan flag `cached: true` saat hit cache).
+  - Konfigurasi TTL via env `GENERATION_CACHE_TTL_MS`.
+3. Rate limiting sederhana per IP:
+  - Plugin `src/plugins/rateLimit.js`, terpasang pada `onRequest`.
+  - Konfigurasi `RATE_LIMIT_MAX` dan `RATE_LIMIT_WINDOW_MS` di env.
+4. OpenAPI & dokumentasi cepat:
+  - Spec JS di `docs/openapi.js`.
+  - Endpoint `/openapi.json` dan tampilan Swagger minimal di `/docs`.
+5. Chunking materi panjang:
+  - Utilitas `src/utils/chunk.js` menggantikan truncation langsung; saat ini hanya memakai chunk pertama sebagai placeholder.
+6. Penyesuaian konfigurasi:
+  - Penambahan variabel env baru di `.env.example` (cache & rate limit).
+  - Alias `LLM_CHUNK_CHARS` ditambahkan untuk kompatibilitas import.
+7. Perbaikan startup issues:
+  - Menghapus/mengatasi import yang tidak tersedia, mengganti import JSON spec menjadi modul JS.
+
+Catatan:
+ - Belum ada mekanisme multi-chunk generation (masih menggunakan chunk pertama).
+ - Belum ada persistence; cache volatile di memori.
+ - Belum ada pengujian otomatis (unit/integration) — dapat ditambahkan tahap berikutnya.
+
+### Cara Uji Cepat Phase 0 (Windows PowerShell)
+
+1) Start service (pastikan dependency sudah terinstall dan `.env` dibuat):
+
+```powershell
+npm start
+```
+
+2) Health check dan OpenAPI:
+
+```powershell
+Invoke-WebRequest http://localhost:5000/health -UseBasicParsing | Select-Object -Expand Content
+Start-Process http://localhost:5000/docs
+```
+
+3) Coba ambil materi (text):
+
+```powershell
+Invoke-WebRequest "http://localhost:5000/api/material/35363?format=text" -UseBasicParsing | Select-Object -Expand Content
+```
+
+4) Uji caching generate (butuh `CEREBRAS_API_KEY`): panggil 2x, panggilan kedua akan mengembalikan `cached: true`.
+
+```powershell
+Invoke-WebRequest "http://localhost:5000/api/test?count=5&difficulty=medium" -UseBasicParsing | Select-Object -Expand Content
+Invoke-WebRequest "http://localhost:5000/api/test?count=5&difficulty=medium" -UseBasicParsing | Select-Object -Expand Content
+```
+
+5) Uji rate limiting sederhana (kirim > RATE_LIMIT_MAX request dalam 1 menit; sebagian akan 429):
+
+```powershell
+1..70 | ForEach-Object {
+  try {
+    (Invoke-WebRequest http://localhost:5000/health -UseBasicParsing).StatusCode
+  } catch {
+    $_.Exception.Response.StatusCode.value__
+  }
+}
+```
+
+6) Uji validasi JSON LLM (opsional): jika `CEREBRAS_API_KEY` tidak mengembalikan JSON sesuai schema, service akan merespon error 502.
+

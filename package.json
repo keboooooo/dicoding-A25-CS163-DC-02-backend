@@ -29,7 +29,8 @@
     "@hapi/hapi": "^21.4.3",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
-    "html-to-text": "^9.0.5"
+    "html-to-text": "^9.0.5",
+    "ajv": "^8.17.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

@@ -16,6 +16,11 @@ import {
   fetchPageHtmlFallback,
 } from "./src/utils/material.js";
 import { callCerebras } from "./src/services/cerebrasService.js";
+import { rateLimit } from "./src/plugins/rateLimit.js";
+import { GENERATION_CACHE_TTL_MS } from "./src/config/env.js";
+import { getCache, setCache } from "./src/utils/cache.js";
+import { chunkMaterial } from "./src/utils/chunk.js";
+import openapiSpec from "./docs/openapi.js";
 
 const init = async () => {
   const server = Hapi.server({
@@ -28,6 +33,8 @@ const init = async () => {
 
   // Centralized error handling (plugin)
   server.ext("onPreResponse", onPreResponse);
+  // Basic rate limit
+  server.ext("onRequest", rateLimit);
 
   // Health route
   server.route({
@@ -68,7 +75,8 @@ const init = async () => {
         }
         let materialText = stripHtmlToText(materialHtml);
         if (materialText.length > MATERIAL_MAX_CHARS) {
-          materialText = materialText.slice(0, MATERIAL_MAX_CHARS);
+          const chunks = chunkMaterial(materialText, MATERIAL_MAX_CHARS);
+          materialText = chunks[0];
         }
 
         const preferences = {
@@ -77,11 +85,20 @@ const init = async () => {
           ...(overrideDifficulty ? { difficulty: overrideDifficulty } : {}),
         };
 
+        // Cache
+        const cacheKey = `gen:${tutorialId}:${JSON.stringify(preferences)}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+          return h.response({ status: "success", data: cached, cached: true }).code(200);
+        }
+
         const result = await callCerebras({
           materialText,
           preferences,
           tutorialId,
         });
+
+        setCache(cacheKey, result, GENERATION_CACHE_TTL_MS);
 
         return h.response({ status: "success", data: result }).code(200);
       } catch (err) {
@@ -140,7 +157,8 @@ const init = async () => {
 
         let materialText = stripHtmlToText(materialHtml);
         if (materialText.length > MATERIAL_MAX_CHARS) {
-          materialText = materialText.slice(0, MATERIAL_MAX_CHARS);
+          const chunks = chunkMaterial(materialText, MATERIAL_MAX_CHARS);
+          materialText = chunks[0];
         }
 
         const preferences = {
@@ -149,11 +167,19 @@ const init = async () => {
           ...(overrideDifficulty ? { difficulty: overrideDifficulty } : {}),
         };
 
+        const cacheKey = `gen:${tutorialId}:${JSON.stringify(preferences)}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+          return h.response({ status: "success", data: cached, cached: true }).code(200);
+        }
+
         const result = await callCerebras({
           materialText,
           preferences,
           tutorialId,
         });
+
+        setCache(cacheKey, result, GENERATION_CACHE_TTL_MS);
 
         return h.response({ status: "success", data: result }).code(200);
       } catch (err) {
@@ -191,7 +217,8 @@ const init = async () => {
         }
         let materialText = stripHtmlToText(materialHtml);
         if (materialText.length > MATERIAL_MAX_CHARS) {
-          materialText = materialText.slice(0, MATERIAL_MAX_CHARS);
+          const chunks = chunkMaterial(materialText, MATERIAL_MAX_CHARS);
+          materialText = chunks[0];
         }
         const payload = {
           tutorialId: String(tutorialId),
@@ -238,7 +265,8 @@ const init = async () => {
         }
         let materialText = stripHtmlToText(materialHtml);
         if (materialText.length > MATERIAL_MAX_CHARS) {
-          materialText = materialText.slice(0, MATERIAL_MAX_CHARS);
+          const chunks = chunkMaterial(materialText, MATERIAL_MAX_CHARS);
+          materialText = chunks[0];
         }
         const payload = {
           tutorialId: String(tutorialId),
@@ -284,6 +312,26 @@ const init = async () => {
           .code(statusCode);
       }
     },
+  });
+
+  // OpenAPI spec route
+  server.route({
+    method: "GET",
+    path: "/openapi.json",
+    handler: () => openapiSpec,
+  });
+
+  // Minimal Swagger UI using CDN
+  server.route({
+    method: "GET",
+    path: "/docs",
+    handler: () => `<!doctype html><html><head><title>API Docs</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+    </head><body>
+      <div id="swagger"></div>
+      <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+      <script>window.ui = SwaggerUIBundle({ url: '/openapi.json', dom_id: '#swagger' });</script>
+    </body></html>`,
   });
 
   await server.start();

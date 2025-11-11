@@ -4,6 +4,7 @@ import {
   CEREBRAS_BASE_URL,
   CEREBRAS_MODEL,
 } from "../config/env.js";
+import { validateQuizOrThrow } from "../validators/quiz.js";
 
 export const callCerebras = async ({ materialText, preferences, tutorialId }) => {
   if (!CEREBRAS_API_KEY) {
@@ -94,6 +95,9 @@ Materi (teks polos):\n\n${materialText}\n\n${schemaDescription}`;
       : effectivePrefs.questionCount,
     sourceTutorialId: String(tutorialId),
   };
+
+  // Validate JSON structure
+  validateQuizOrThrow(parsed);
 
   return parsed;
 };

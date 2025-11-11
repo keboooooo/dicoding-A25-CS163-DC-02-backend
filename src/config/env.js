@@ -16,3 +16,13 @@ export const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY || "";
 export const MATERIAL_MAX_CHARS = Number(
   process.env.MATERIAL_MAX_CHARS || 10000
 );
+export const LLM_CHUNK_CHARS = MATERIAL_MAX_CHARS;
+
+// Phase 0 configs
+export const GENERATION_CACHE_TTL_MS = Number(
+  process.env.GENERATION_CACHE_TTL_MS || 5 * 60 * 1000
+);
+export const RATE_LIMIT_WINDOW_MS = Number(
+  process.env.RATE_LIMIT_WINDOW_MS || 60 * 1000
+);
+export const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 60);
