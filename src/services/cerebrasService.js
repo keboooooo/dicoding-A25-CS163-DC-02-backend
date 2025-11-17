@@ -3,19 +3,31 @@ import {
   CEREBRAS_API_KEY,
   CEREBRAS_BASE_URL,
   CEREBRAS_MODEL,
+  QUIZ_DEFAULT_DIFFICULTY,
+  QUIZ_DEFAULT_QUESTION_COUNT,
+  QUIZ_DEFAULT_LANGUAGE,
+  QUIZ_DEFAULT_FORMAT,
 } from "../config/env.js";
 import { validateQuizOrThrow } from "../validators/quiz.js";
 
-export const callCerebras = async ({ materialText, preferences, tutorialId }) => {
+export const callCerebras = async ({
+  materialText,
+  preferences,
+  tutorialId,
+}) => {
   if (!CEREBRAS_API_KEY) {
     throw new Error("CEREBRAS_API_KEY is not set");
   }
 
   const effectivePrefs = {
-    difficulty: preferences?.difficulty || "medium",
-    questionCount: preferences?.questionCount || 5,
-    language: preferences?.language || "id",
-    format: preferences?.format || "multiple-choice",
+    difficulty: preferences?.difficulty || QUIZ_DEFAULT_DIFFICULTY,
+    questionCount:
+      typeof preferences?.questionCount === "number" &&
+      !Number.isNaN(preferences.questionCount)
+        ? preferences.questionCount
+        : QUIZ_DEFAULT_QUESTION_COUNT,
+    language: preferences?.language || QUIZ_DEFAULT_LANGUAGE,
+    format: preferences?.format || QUIZ_DEFAULT_FORMAT,
   };
 
   const systemPrompt =

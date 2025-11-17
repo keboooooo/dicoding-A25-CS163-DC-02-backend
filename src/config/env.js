@@ -18,6 +18,16 @@ export const MATERIAL_MAX_CHARS = Number(
 );
 export const LLM_CHUNK_CHARS = MATERIAL_MAX_CHARS;
 
+// Quiz / LLM generation defaults (configurable via .env)
+export const QUIZ_DEFAULT_DIFFICULTY =
+  process.env.QUIZ_DEFAULT_DIFFICULTY || "medium";
+export const QUIZ_DEFAULT_QUESTION_COUNT = Number(
+  process.env.QUIZ_DEFAULT_QUESTION_COUNT || 3
+);
+export const QUIZ_DEFAULT_LANGUAGE = process.env.QUIZ_DEFAULT_LANGUAGE || "id";
+export const QUIZ_DEFAULT_FORMAT =
+  process.env.QUIZ_DEFAULT_FORMAT || "multiple-choice";
+
 // Phase 0 configs
 export const GENERATION_CACHE_TTL_MS = Number(
   process.env.GENERATION_CACHE_TTL_MS || 5 * 60 * 1000
