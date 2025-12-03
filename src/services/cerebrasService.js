@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 import {
   CEREBRAS_API_KEY,
   CEREBRAS_BASE_URL,
@@ -7,8 +7,9 @@ import {
   QUIZ_DEFAULT_QUESTION_COUNT,
   QUIZ_DEFAULT_LANGUAGE,
   QUIZ_DEFAULT_FORMAT,
-} from "../config/env.js";
-import { validateQuizOrThrow } from "../validators/quiz.js";
+} from '../config/env.js';
+import { validateQuizOrThrow } from '../validators/quiz.js';
+import { buildQuizPrompt } from './generatorPrompt.js';
 
 export const callCerebras = async ({
   materialText,
@@ -16,77 +17,51 @@ export const callCerebras = async ({
   tutorialId,
 }) => {
   if (!CEREBRAS_API_KEY) {
-    throw new Error("CEREBRAS_API_KEY is not set");
+    throw new Error('CEREBRAS_API_KEY is not set');
   }
 
   const effectivePrefs = {
     difficulty: preferences?.difficulty || QUIZ_DEFAULT_DIFFICULTY,
     questionCount:
-      typeof preferences?.questionCount === "number" &&
+      typeof preferences?.questionCount === 'number' &&
       !Number.isNaN(preferences.questionCount)
         ? preferences.questionCount
         : QUIZ_DEFAULT_QUESTION_COUNT,
     language: preferences?.language || QUIZ_DEFAULT_LANGUAGE,
     format: preferences?.format || QUIZ_DEFAULT_FORMAT,
+    // Optional: allow multiple correct answers per question when > 1; when 1 -> fixed single; when NaN -> mixed
+    correctCount:
+      typeof preferences?.correctCount === 'number' &&
+      !Number.isNaN(preferences.correctCount)
+        ? preferences.correctCount
+        : Number(process.env.CORRECT_COUNT),
   };
 
-  const systemPrompt =
-    "Anda adalah generator soal kuis. Kembalikan HANYA JSON valid sesuai skema tanpa teks tambahan.";
+  const { systemPrompt, userPrompt, temperature, fixedMode, fixedCount } =
+    buildQuizPrompt(effectivePrefs, materialText);
 
-  const schemaDescription = `Skema JSON:
-{
-  "questions": [
-    {
-      "id": number,
-      "question": string,
-      "options": string[],
-      "answer": string,
-      "explanation": string
-    }
-  ],
-  "metadata": {
-    "difficulty": "easy|medium|hard",
-    "count": number,
-    "sourceTutorialId": string
-  }
-}`;
-
-  const userPrompt = `Buat ${effectivePrefs.questionCount} soal ${
-    effectivePrefs.format
-  } berbahasa ${
-    effectivePrefs.language === "id" ? "Indonesia" : "Inggris"
-  } berdasarkan materi berikut. Tingkat kesulitan: ${effectivePrefs.difficulty}.
-
-Persyaratan:
-- Setiap soal memiliki 4 opsi jawaban.
-- Pastikan hanya SATU jawaban yang benar.
-- Berikan penjelasan singkat pada tiap soal.
-- Kembalikan output HANYA dalam format JSON sesuai skema.
-
-Materi (teks polos):\n\n${materialText}\n\n${schemaDescription}`;
-
-  const url = `${CEREBRAS_BASE_URL.replace(/\/$/, "")}/v1/chat/completions`;
+  const url = `${CEREBRAS_BASE_URL.replace(/\/$/, '')}/v1/chat/completions`;
 
   const body = {
     model: CEREBRAS_MODEL,
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ],
-    temperature: 0.2,
+    temperature,
     max_tokens: 2048,
-    response_format: { type: "json_object" },
+    response_format: { type: 'json_object' },
   };
 
   const { data } = await axios.post(url, body, {
     headers: {
       Authorization: `Bearer ${CEREBRAS_API_KEY}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     timeout: 30000,
   });
 
-  const content = data?.choices?.[0]?.message?.content?.trim() || "";
+  const content = data?.choices?.[0]?.message?.content?.trim() || '';
   let jsonText = content;
   const fenceMatch = content.match(/```(?:json)?\n([\s\S]*?)\n```/i);
   if (fenceMatch) jsonText = fenceMatch[1];
@@ -95,7 +70,7 @@ Materi (teks polos):\n\n${materialText}\n\n${schemaDescription}`;
   try {
     parsed = JSON.parse(jsonText);
   } catch (e) {
-    jsonText = jsonText.replace(/^[^{\[]+/, "").replace(/[^}\]]+$/, "");
+    jsonText = jsonText.replace(/^[^{\[]+/, '').replace(/[^}\]]+$/, '');
     parsed = JSON.parse(jsonText);
   }
 
@@ -106,6 +81,7 @@ Materi (teks polos):\n\n${materialText}\n\n${schemaDescription}`;
       ? parsed.questions.length
       : effectivePrefs.questionCount,
     sourceTutorialId: String(tutorialId),
+    ...(fixedMode ? { correctCount: Number(fixedCount) } : {}),
   };
 
   // Validate JSON structure
